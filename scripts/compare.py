@@ -35,7 +35,7 @@ def main():
         "replayer_state_matches_exchange": rp["state_hash"] == ex["state_hash"],
         "replayer_books_match_exchange": rp["books_hash"] == ex["books_hash"],
         "feed_handler_consumed_through_end_of_session": fd["next_seq"] > ex["feed_end_of_session_seq"],
-        "feed_handler_sent_one_request_per_gap": fd["retrans_requests"] == fd["gaps"],
+        "no_redundant_recovery_traffic": fd["duplicates"] == 0 and fd["recovered_packets"] == fd["retrans_requests"],
         "feed_handler_saw_end_of_session": bool(fd["end_of_session"]) and not fd["gap_outstanding"],
         "packets_were_actually_dropped": ex["feed_packets_dropped"] > 0,
         "every_gap_was_recovered": fd["gaps"] > 0 and fd["recovered_packets"] >= fd["gaps"],
