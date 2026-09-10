@@ -113,6 +113,12 @@ TEST(feed_lost_packets_recovered_by_retransmission) {
     pending.swap(retrans);
     for (const auto& p : pending) h.on_packet(p);
   }
+  // A loss at the very end can only be noticed when something else arrives,
+  // which is what the publisher's periodic heartbeat is for.
+  s.pub.heartbeat(s.t);
+  s.pub.flush();
+  h.on_packet(s.packets.back());
+  for (const auto& p : retrans) h.on_packet(p);
   CHECK(dropped > 100);
   CHECK(h.end_of_session());
   CHECK(!h.gap_outstanding());
@@ -153,8 +159,11 @@ TEST(feed_snapshot_when_behind_the_ring) {
   // joins late cannot be served by retransmission.
   FeedPublisher small(77, 300);
   Engine replay(Scenario::kSymbols, &small);
+  small.system_event(1, wire::feed::SystemCode::StartOfSession);
   for (const Inbound& r : s.seq.log()) replay.apply(r);
+  small.system_event(s.t, wire::feed::SystemCode::EndOfSession);
   small.flush();
+  CHECK_EQ(small.next_seq(), s.pub.next_seq());
   CHECK(small.oldest_retained() > 1);
 
   FeedHandler h(Scenario::kSymbols);

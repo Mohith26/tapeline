@@ -43,6 +43,12 @@ inline void check(bool ok, const char* expr, const char* file, int line, const s
   }
 }
 
+template <class A, class B>
+void check_eq(const A& a, const B& b, const char* expr, const char* file, int line) {
+  ++checks();
+  if (!(a == b)) failures().push_back(std::format("{}:{}: CHECK({}) ({} vs {})", file, line, expr, a, b));
+}
+
 } // namespace tt
 
 #define TEST(name)                                                                  \
@@ -52,5 +58,4 @@ inline void check(bool ok, const char* expr, const char* file, int line, const s
 
 #define CHECK(expr) tt::check(static_cast<bool>(expr), #expr, __FILE__, __LINE__)
 #define CHECK_MSG(expr, msg) tt::check(static_cast<bool>(expr), #expr, __FILE__, __LINE__, (msg))
-#define CHECK_EQ(a, b)                                                                     \
-  tt::check((a) == (b), #a " == " #b, __FILE__, __LINE__, std::format("({} vs {})", (a), (b)))
+#define CHECK_EQ(a, b) tt::check_eq((a), (b), #a " == " #b, __FILE__, __LINE__)
