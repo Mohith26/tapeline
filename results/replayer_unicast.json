@@ -1,0 +1,17 @@
+{
+  "log": "results/exchange.log",
+  "records": 200010,
+  "applied": 200010,
+  "last_seq": 200010,
+  "records_per_s": 5187121,
+  "orders": 140027,
+  "fills": 79010,
+  "cancels": 58572,
+  "replaces": 14889,
+  "rejects": 273,
+  "events": 200010,
+  "event_hash": "8a5343a3440e6cd4",
+  "books_hash": "00d0a674dae14128",
+  "state_hash": "abd130103edc9af4",
+  "invariants_ok": true
+}

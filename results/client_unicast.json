@@ -1,0 +1,22 @@
+{
+  "session": 1,
+  "elapsed_s": 0.579,
+  "sent_orders": 140053,
+  "sent_cancels": 45021,
+  "sent_replaces": 14964,
+  "sent_total": 200038,
+  "window": 32,
+  "msgs_per_s": 345299,
+  "frames_received": 371785,
+  "accepted": 140027,
+  "executed": 158020,
+  "canceled": 58572,
+  "replaced": 14889,
+  "rejected": 273,
+  "heartbeats": 1,
+  "seq_gaps": 0,
+  "resumed": true,
+  "replayed_on_resume": 2802,
+  "end_of_session_seen": true,
+  "rtt_ns": {"unit": "ns", "count": 199999, "min": 8292, "mean": 53879.8, "p50": 50417, "p90": 69959, "p99": 196292, "p99_9": 363250, "max": 1691833}
+}

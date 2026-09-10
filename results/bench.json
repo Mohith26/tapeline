@@ -1,0 +1,10 @@
+{
+  "n": 1000000,
+  "timer_overhead_ns": {"unit": "ns", "count": 100000, "min": 0, "mean": 17.0, "p50": 0, "p90": 42, "p99": 42, "p99_9": 42, "max": 3917},
+  "book": {"orders": 1000000, "levels_per_side": 200, "mean_add_ns": 35.7, "mean_cancel_ns": 131.1, "add_ns": {"unit": "ns", "count": 1000000, "min": 0, "mean": 20.9, "p50": 0, "p90": 42, "p99": 42, "p99_9": 916, "max": 29500}, "cancel_ns": {"unit": "ns", "count": 1000000, "min": 0, "mean": 105.7, "p50": 125, "p90": 167, "p99": 250, "p99_9": 1084, "max": 60041}, "add_per_s": 28045672, "cancel_per_s": 7625325, "invariants_ok": true},
+  "matching": {"records": 1000001, "orders": 704027, "fills": 424974, "cancels": 274768, "replaces": 98278, "rejects": 0, "events": 2024322, "resting_at_end": 6, "records_per_s": 13950923, "mean_ns_per_record": 71.7, "apply_ns": {"unit": "ns", "count": 1000001, "min": 0, "mean": 57.0, "p50": 42, "p90": 83, "p99": 166, "p99_9": 1625, "max": 36916}, "invariants_ok": true},
+  "replay": {"records": 1000001, "records_per_s": 5659486, "state_matches_primary": true},
+  "feed_codec": {"messages": 1000000, "bytes": 30333338, "encode_ns_per_msg": 7.40, "decode_ns_per_msg": 4.11, "decode_msgs_per_s": 243249818, "all_decoded": true, "checksum": 500018666698},
+  "gateway_codec": {"frames": 1000000, "bytes": 52000000, "encode_ns_per_frame": 15.61, "decode_ns_per_frame": 4.24, "all_decoded": true},
+  "feed_pipeline": {"messages": 1243222, "packets": 29162, "bytes": 40347807, "avg_msgs_per_packet": 42.6, "handler_msgs_per_s": 29645639, "handler_ns_per_msg": 33.7, "book_matches_engine": true}
+}

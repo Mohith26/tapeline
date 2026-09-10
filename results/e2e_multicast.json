@@ -1,0 +1,257 @@
+{
+  "checks": {
+    "feed_handler_book_matches_exchange": true,
+    "python_decoder_book_matches_exchange": true,
+    "replayer_state_matches_exchange": true,
+    "replayer_books_match_exchange": true,
+    "feed_handler_consumed_through_end_of_session": true,
+    "no_redundant_recovery_traffic": true,
+    "feed_handler_saw_end_of_session": true,
+    "packets_were_actually_dropped": true,
+    "every_gap_was_recovered": true,
+    "client_saw_no_sequence_gaps": true,
+    "client_resumed_and_got_replay": true,
+    "client_saw_end_of_session": true,
+    "exchange_closed_on_schedule_with_client_connected": true,
+    "final_books_are_not_empty": true,
+    "final_books_span_every_symbol": true
+  },
+  "all_ok": true,
+  "exchange": {
+    "elapsed_s": 1.65,
+    "records": 200004,
+    "orders": 140022,
+    "fills": 79172,
+    "volume": 2052417,
+    "cancels": 58397,
+    "replaces": 14865,
+    "rejects": 351,
+    "feed_messages": 247486,
+    "feed_packets_built": 34323,
+    "feed_packets_sent": 33637,
+    "feed_packets_dropped": 686,
+    "feed_bytes": 8525052,
+    "retrans_served": 686,
+    "snapshots_served": 0,
+    "inbound_processing_ns": {
+      "unit": "ns",
+      "count": 200003,
+      "min": 41,
+      "mean": 498.6,
+      "p50": 250,
+      "p90": 542,
+      "p99": 5292,
+      "p99_9": 12292,
+      "max": 3417209
+    },
+    "books_hash": "c3c74e0497725407",
+    "state_hash": "9bd9b2fa35d11332",
+    "books": [
+      {
+        "symbol": 0,
+        "live_orders": 203,
+        "bid_levels": 59,
+        "ask_levels": 53,
+        "best_bid": 10026,
+        "best_ask": 10029,
+        "hash": "1ce321d581a12795"
+      },
+      {
+        "symbol": 1,
+        "live_orders": 203,
+        "bid_levels": 51,
+        "ask_levels": 54,
+        "best_bid": 10006,
+        "best_ask": 10009,
+        "hash": "01a57cec08258ea2"
+      },
+      {
+        "symbol": 2,
+        "live_orders": 189,
+        "bid_levels": 61,
+        "ask_levels": 45,
+        "best_bid": 10034,
+        "best_ask": 10035,
+        "hash": "7252473202b52a13"
+      },
+      {
+        "symbol": 3,
+        "live_orders": 231,
+        "bid_levels": 64,
+        "ask_levels": 52,
+        "best_bid": 10020,
+        "best_ask": 10040,
+        "hash": "c54ff6cc1bcf50c3"
+      },
+      {
+        "symbol": 4,
+        "live_orders": 209,
+        "bid_levels": 57,
+        "ask_levels": 48,
+        "best_bid": 9983,
+        "best_ask": 10036,
+        "hash": "14f805a076f46df9"
+      },
+      {
+        "symbol": 5,
+        "live_orders": 185,
+        "bid_levels": 45,
+        "ask_levels": 66,
+        "best_bid": 9960,
+        "best_ask": 9984,
+        "hash": "dc4e8325d84a7161"
+      },
+      {
+        "symbol": 6,
+        "live_orders": 206,
+        "bid_levels": 62,
+        "ask_levels": 60,
+        "best_bid": 9994,
+        "best_ask": 10008,
+        "hash": "00858130a5953044"
+      },
+      {
+        "symbol": 7,
+        "live_orders": 195,
+        "bid_levels": 54,
+        "ask_levels": 55,
+        "best_bid": 9998,
+        "best_ask": 10003,
+        "hash": "51e20d5a18e05a7f"
+      }
+    ]
+  },
+  "feed": {
+    "udp_packets": 33607,
+    "tcp_packets": 686,
+    "messages": 247456,
+    "gaps": 686,
+    "retrans_requests": 686,
+    "recovered_packets": 686,
+    "duplicates": 0,
+    "snapshots": 0,
+    "decode_errors": 0,
+    "unknown_orders": 0,
+    "packet_handling_ns": {
+      "unit": "ns",
+      "count": 34293,
+      "min": 0,
+      "mean": 903.4,
+      "p50": 583,
+      "p90": 1667,
+      "p99": 5250,
+      "p99_9": 16792,
+      "max": 59000
+    },
+    "books_hash": "c3c74e0497725407"
+  },
+  "client": {
+    "sent_orders": 140048,
+    "sent_cancels": 45021,
+    "sent_replaces": 14963,
+    "sent_total": 200032,
+    "window": 32,
+    "msgs_per_s": 176329,
+    "accepted": 140022,
+    "executed": 158344,
+    "canceled": 58397,
+    "replaced": 14865,
+    "rejected": 351,
+    "seq_gaps": 0,
+    "replayed_on_resume": 2741,
+    "rtt_ns": {
+      "unit": "ns",
+      "count": 199998,
+      "min": 22292,
+      "mean": 153374.7,
+      "p50": 143917,
+      "p90": 212917,
+      "p99": 339000,
+      "p99_9": 761542,
+      "max": 3571208
+    }
+  },
+  "replayer": {
+    "records": 200004,
+    "records_per_s": 4975967,
+    "state_hash": "9bd9b2fa35d11332",
+    "books_hash": "c3c74e0497725407",
+    "invariants_ok": true
+  },
+  "feedtap": {
+    "packets": 34293,
+    "messages": 247456,
+    "applied": 247456,
+    "gaps": 686,
+    "duplicates": 0,
+    "buffered": 3119,
+    "snapshots": 0,
+    "retrans_packets": 686,
+    "decode_errors": 0,
+    "unknown_orders": 0,
+    "heartbeats": 1,
+    "system_events": "OC",
+    "next_seq": 247457,
+    "gap_outstanding": false,
+    "end_of_session": true,
+    "books_hash": "c3c74e0497725407",
+    "books": [
+      {
+        "symbol": 0,
+        "live_orders": 203,
+        "best_bid": 10026,
+        "best_ask": 10029,
+        "hash": "1ce321d581a12795"
+      },
+      {
+        "symbol": 1,
+        "live_orders": 203,
+        "best_bid": 10006,
+        "best_ask": 10009,
+        "hash": "01a57cec08258ea2"
+      },
+      {
+        "symbol": 2,
+        "live_orders": 189,
+        "best_bid": 10034,
+        "best_ask": 10035,
+        "hash": "7252473202b52a13"
+      },
+      {
+        "symbol": 3,
+        "live_orders": 231,
+        "best_bid": 10020,
+        "best_ask": 10040,
+        "hash": "c54ff6cc1bcf50c3"
+      },
+      {
+        "symbol": 4,
+        "live_orders": 209,
+        "best_bid": 9983,
+        "best_ask": 10036,
+        "hash": "14f805a076f46df9"
+      },
+      {
+        "symbol": 5,
+        "live_orders": 185,
+        "best_bid": 9960,
+        "best_ask": 9984,
+        "hash": "dc4e8325d84a7161"
+      },
+      {
+        "symbol": 6,
+        "live_orders": 206,
+        "best_bid": 9994,
+        "best_ask": 10008,
+        "hash": "00858130a5953044"
+      },
+      {
+        "symbol": 7,
+        "live_orders": 195,
+        "best_bid": 9998,
+        "best_ask": 10003,
+        "hash": "51e20d5a18e05a7f"
+      }
+    ]
+  }
+}
