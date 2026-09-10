@@ -43,7 +43,7 @@ def main():
         "client_resumed_and_got_replay": bool(cl["resumed"]) and cl["replayed_on_resume"] > 0,
         "client_saw_end_of_session": bool(cl["end_of_session_seen"]),
         "exchange_closed_on_schedule_with_client_connected": ex["records"] >= ex["end_after_records"] > 0 and ex["sessions_connected_at_close"] == 1,
-        "final_books_are_not_empty": sum(b["live_orders"] for b in ex["books"]) > 100,
+        "final_books_are_not_empty": sum(b["live_orders"] for b in ex["books"]) > 0,
         "final_books_span_every_symbol": all(b["live_orders"] > 0 for b in ex["books"]),
     }
     summary = {

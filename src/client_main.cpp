@@ -78,7 +78,11 @@ struct Client {
   void on_frame(const wire::gw::OutMsg& m) {
     using wire::gw::OutType;
     if (m.type != OutType::LoginAccepted && m.type != OutType::LoginRejected && m.type != OutType::Heartbeat) {
-      if (m.seq != next_expected) ++seq_gaps;
+      if (m.seq != next_expected) {
+        ++seq_gaps;
+        std::println(stderr, "sequence gap: expected {} got {} (type {})", next_expected, m.seq,
+                     static_cast<char>(m.type));
+      }
       next_expected = m.seq + 1;
     }
     auto settle = [&](ClientOrderId cl) {
@@ -174,7 +178,10 @@ int main(int argc, char** argv) {
 
   std::mt19937 rng(seed);
   std::uniform_real_distribution<double> coin(0.0, 1.0);
-  std::uniform_int_distribution<Price> px(9900, 10100);
+  // Buys and sells overlap in the middle of the range, so roughly a third of
+  // the flow crosses immediately and the rest builds a book.
+  std::uniform_int_distribution<Price> buy_px(9900, 10050);
+  std::uniform_int_distribution<Price> sell_px(9950, 10100);
   std::uniform_int_distribution<Qty> qty(1, 100);
   std::uniform_int_distribution<SymbolId> sym(0, n_symbols - 1);
 
@@ -185,7 +192,10 @@ int main(int argc, char** argv) {
   const Timestamp t_start = now_ns();
 
   while (sent_orders + sent_cancels + sent_replaces < n_orders || !c.inflight.empty()) {
-    while (c.inflight.size() < window && sent_orders + sent_cancels + sent_replaces < n_orders) {
+    // Approaching the resume point: stop sending, let the window drain, then
+    // drop the connection with nothing in flight.
+    const bool draining = resume_at > 0 && !resumed && sent_orders >= resume_at;
+    while (!draining && c.inflight.size() < window && sent_orders + sent_cancels + sent_replaces < n_orders) {
       wire::gw::InMsg m;
       const double r = coin(rng);
       std::vector<ClientOrderId> pick;
@@ -195,7 +205,7 @@ int main(int argc, char** argv) {
         std::advance(it, static_cast<std::ptrdiff_t>(rng() % c.live.size()));
         if (coin(rng) < 0.25) {
           m.type = wire::gw::InType::Replace;
-          m.replace = ReplaceOrder{it->first, next_cl, px(rng), qty(rng)};
+          m.replace = ReplaceOrder{it->first, next_cl, coin(rng) < 0.5 ? buy_px(rng) : sell_px(rng), qty(rng)};
           c.inflight[it->first] = now_ns();
           c.live.erase(it);
           ++next_cl;
@@ -210,8 +220,9 @@ int main(int argc, char** argv) {
       } else {
         m.type = wire::gw::InType::EnterOrder;
         const bool ioc = coin(rng) < ioc_ratio;
-        m.order = NewOrder{next_cl, sym(rng), coin(rng) < 0.5 ? Side::Buy : Side::Sell, OrderType::Limit,
-                           ioc ? TimeInForce::IOC : TimeInForce::Day, px(rng), qty(rng)};
+        const Side side = coin(rng) < 0.5 ? Side::Buy : Side::Sell;
+        m.order = NewOrder{next_cl, sym(rng), side, OrderType::Limit, ioc ? TimeInForce::IOC : TimeInForce::Day,
+                           side == Side::Buy ? buy_px(rng) : sell_px(rng), qty(rng)};
         c.inflight[next_cl] = now_ns();
         ++next_cl;
         ++sent_orders;
