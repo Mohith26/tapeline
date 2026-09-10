@@ -147,5 +147,5 @@ TEST(gateway_rejects_and_cancels_reach_the_session) {
         msgs[3].reason == static_cast<std::uint8_t>(CancelReason::ImmediateOrCancel));
   gw.end_of_session_all();
   auto tail = drain(gw.session(1));
-  CHECK(tail.size() == 1 && tail[0].type == wire::gw::OutType::EndOfSession);
+  CHECK(tail.size() == 1 && tail[0].type == wire::gw::OutType::EndOfSession && tail[0].seq == 4);
 }

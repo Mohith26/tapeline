@@ -424,7 +424,7 @@ constexpr std::size_t out_payload_size(OutType t) noexcept {
     case OutType::Replaced: return 8 + 8 + 8 + 8 + 8 + 8 + 4;
     case OutType::Rejected: return 8 + 8 + 8 + 1;
     case OutType::Heartbeat: return 0;
-    case OutType::EndOfSession: return 0;
+    case OutType::EndOfSession: return 8;
   }
   return 0;
 }
@@ -587,8 +587,10 @@ inline void encode(const OutMsg& m, Writer& w) noexcept {
       w.put(m.cl_id);
       w.put(m.reason);
       break;
-    case OutType::Heartbeat:
     case OutType::EndOfSession:
+      w.put(m.seq);
+      break;
+    case OutType::Heartbeat:
       break;
   }
 }
@@ -655,8 +657,10 @@ inline std::expected<OutMsg, Error> decode_out(Reader& r) noexcept {
       m.cl_id = peek.get<ClientOrderId>();
       m.reason = peek.get<std::uint8_t>();
       break;
-    case OutType::Heartbeat:
     case OutType::EndOfSession:
+      m.seq = peek.get<SeqNo>();
+      break;
+    case OutType::Heartbeat:
       break;
   }
   if (!peek.ok()) return std::unexpected(Error::Truncated);

@@ -234,8 +234,10 @@ TEST(wire_gateway_outbound_roundtrip) {
       case gw::OutType::Rejected:
         CHECK(d->cl_id == 10 && d->reason == 3);
         break;
-      case gw::OutType::Heartbeat:
       case gw::OutType::EndOfSession:
+        CHECK(d->seq == 99);
+        break;
+      case gw::OutType::Heartbeat:
         break;
     }
   }
