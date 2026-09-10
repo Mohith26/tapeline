@@ -18,6 +18,7 @@
 #include <print>
 #include <random>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace tapeline;
@@ -65,47 +66,91 @@ std::string bench_book(std::uint64_t n) {
   std::string why;
   const bool ok = book.check_invariants(&why) && book.live_orders() == 0;
   return std::format(
-      "{{\"orders\": {}, \"levels_per_side\": 200, \"add_ns\": {}, \"cancel_ns\": {}, "
-      "\"add_per_s\": {:.0f}, \"cancel_per_s\": {:.0f}, \"invariants_ok\": {}}}",
-      n, add_h.json(), cancel_h.json(), static_cast<double>(n) * 1e9 / static_cast<double>(t1 - t0),
+      "{{\"orders\": {}, \"levels_per_side\": 200, \"mean_add_ns\": {:.1f}, \"mean_cancel_ns\": {:.1f}, "
+      "\"add_ns\": {}, \"cancel_ns\": {}, \"add_per_s\": {:.0f}, \"cancel_per_s\": {:.0f}, \"invariants_ok\": {}}}",
+      n, static_cast<double>(t1 - t0) / static_cast<double>(n), static_cast<double>(t2 - t1) / static_cast<double>(n),
+      add_h.json(), cancel_h.json(), static_cast<double>(n) * 1e9 / static_cast<double>(t1 - t0),
       static_cast<double>(n) * 1e9 / static_cast<double>(t2 - t1), ok);
 }
 
+// Tracks which client order ids are still resting so the generator only
+// cancels orders that exist; the workload is then free of spurious rejects.
+struct LiveTracker : EventSink {
+  std::vector<ClientOrderId> live;
+  std::unordered_map<ClientOrderId, std::size_t> where;
+  void add(ClientOrderId cl) {
+    where[cl] = live.size();
+    live.push_back(cl);
+  }
+  void drop(ClientOrderId cl) {
+    auto it = where.find(cl);
+    if (it == where.end()) return;
+    const std::size_t i = it->second;
+    const ClientOrderId last = live.back();
+    live[i] = last;
+    where[last] = i;
+    live.pop_back();
+    where.erase(it);
+  }
+  void on_event(const Event& ev) override {
+    switch (ev.type) {
+      case EventType::Rested: add(ev.cl_id); break;
+      case EventType::Executed:
+        if (ev.resting_leaves == 0) drop(ev.resting_cl_id);
+        break;
+      case EventType::Canceled:
+        if (ev.leaves == 0) drop(ev.cl_id);
+        break;
+      case EventType::Replaced: drop(ev.old_cl_id); break;
+      default: break;
+    }
+  }
+};
+
 std::string bench_matching(std::uint64_t n, Sequencer& seq_out) {
+  // Pass one builds the workload against a live engine so cancels and
+  // replaces always target resting orders. Pass two is what gets timed.
   std::mt19937 rng(2);
   std::uniform_int_distribution<int> op(0, 9);
   std::uniform_int_distribution<Price> px(9990, 10010);
   std::uniform_int_distribution<Qty> qty(1, 100);
   std::vector<Inbound> recs;
   recs.reserve(n + 1);
+  LiveTracker tracker;
+  Engine gen(1, &tracker);
   Inbound open;
   open.kind = InboundKind::SessionOpen;
   open.session = 1;
+  open.seq = 1;
   recs.push_back(open);
-  std::vector<ClientOrderId> live;
+  gen.apply(open);
   ClientOrderId next_cl = 1;
   for (std::uint64_t i = 0; i < n; ++i) {
     Inbound r;
     r.session = 1;
+    r.seq = i + 2;
     const int o = op(rng);
-    if (o < 8 || live.empty()) {
+    if (o < 7 || tracker.live.empty()) {
       r.kind = InboundKind::NewOrder;
-      r.new_order = NewOrder{next_cl, 0, o % 2 ? Side::Buy : Side::Sell, OrderType::Limit,
-                             o == 7 ? TimeInForce::IOC : TimeInForce::Day, px(rng), qty(rng)};
-      if (o != 7) live.push_back(next_cl);
-      ++next_cl;
-    } else {
-      std::uniform_int_distribution<std::size_t> pick(0, live.size() - 1);
-      const auto idx = pick(rng);
+      r.new_order = NewOrder{next_cl++, 0, o % 2 ? Side::Buy : Side::Sell, OrderType::Limit,
+                             o == 6 ? TimeInForce::IOC : TimeInForce::Day, px(rng), qty(rng)};
+    } else if (o < 9) {
+      std::uniform_int_distribution<std::size_t> pick(0, tracker.live.size() - 1);
       r.kind = InboundKind::Cancel;
-      r.cancel = CancelOrder{live[idx], 0};
-      live[idx] = live.back();
-      live.pop_back();
+      r.cancel = CancelOrder{tracker.live[pick(rng)], 0};
+    } else {
+      std::uniform_int_distribution<std::size_t> pick(0, tracker.live.size() - 1);
+      r.kind = InboundKind::Replace;
+      r.replace = ReplaceOrder{tracker.live[pick(rng)], next_cl++, px(rng), qty(rng)};
     }
     recs.push_back(r);
+    gen.apply(r);
   }
+
   Counter sink;
   Engine engine(1, &sink);
+  engine.reserve(n);
+  seq_out.reserve(n + 1);
   Histogram h(n);
   const Timestamp t0 = now_ns();
   for (const Inbound& r : recs) {
@@ -115,13 +160,15 @@ std::string bench_matching(std::uint64_t n, Sequencer& seq_out) {
   }
   const Timestamp t1 = now_ns();
   std::string why;
-  const bool ok = engine.check_invariants(&why);
+  const bool ok = engine.check_invariants(&why) && engine.state_hash() == gen.state_hash();
   const auto& st = engine.stats();
   return std::format(
-      "{{\"records\": {}, \"orders\": {}, \"fills\": {}, \"cancels\": {}, \"rejects\": {}, \"events\": {}, "
-      "\"resting_at_end\": {}, \"records_per_s\": {:.0f}, \"apply_ns\": {}, \"invariants_ok\": {}}}",
-      st.records, st.orders, st.fills, st.cancels, st.rejects, sink.n, engine.book(0).live_orders(),
-      static_cast<double>(recs.size()) * 1e9 / static_cast<double>(t1 - t0), h.json(), ok);
+      "{{\"records\": {}, \"orders\": {}, \"fills\": {}, \"cancels\": {}, \"replaces\": {}, \"rejects\": {}, "
+      "\"events\": {}, \"resting_at_end\": {}, \"records_per_s\": {:.0f}, \"mean_ns_per_record\": {:.1f}, "
+      "\"apply_ns\": {}, \"invariants_ok\": {}}}",
+      st.records, st.orders, st.fills, st.cancels, st.replaces, st.rejects, sink.n, engine.book(0).live_orders(),
+      static_cast<double>(recs.size()) * 1e9 / static_cast<double>(t1 - t0),
+      static_cast<double>(t1 - t0) / static_cast<double>(recs.size()), h.json(), ok);
 }
 
 std::string bench_replay(const Sequencer& seq, std::uint64_t primary_hash) {

@@ -56,6 +56,8 @@ class Sequencer {
     if (file_) std::fflush(file_);
   }
 
+  void reserve(std::size_t records) { log_.reserve(records); }
+
   [[nodiscard]] SeqNo next() const noexcept { return next_; }
   [[nodiscard]] std::size_t size() const noexcept { return log_.size(); }
   [[nodiscard]] std::span<const Inbound> log() const noexcept { return log_; }

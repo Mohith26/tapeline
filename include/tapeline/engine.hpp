@@ -38,6 +38,10 @@ class Engine {
 
   void set_sink(EventSink* sink) noexcept { sink_ = sink; }
 
+  // Pre-size the id index so a long session does not pay for vector growth
+  // on the matching path.
+  void reserve(std::size_t expected_orders) { refs_.reserve(expected_orders + 1); }
+
   void apply(const Inbound& rec) {
     ++stats_.records;
     switch (rec.kind) {
