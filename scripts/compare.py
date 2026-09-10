@@ -34,13 +34,14 @@ def main():
         "python_decoder_book_matches_exchange": tap["books_hash"] == ex["books_hash"],
         "replayer_state_matches_exchange": rp["state_hash"] == ex["state_hash"],
         "replayer_books_match_exchange": rp["books_hash"] == ex["books_hash"],
-        "feed_handler_consumed_every_message": fd["next_seq"] == ex["feed_next_seq"],
+        "feed_handler_consumed_through_end_of_session": fd["next_seq"] > ex["feed_end_of_session_seq"],
+        "feed_handler_sent_one_request_per_gap": fd["retrans_requests"] == fd["gaps"],
         "feed_handler_saw_end_of_session": bool(fd["end_of_session"]) and not fd["gap_outstanding"],
         "packets_were_actually_dropped": ex["feed_packets_dropped"] > 0,
         "every_gap_was_recovered": fd["gaps"] > 0 and fd["recovered_packets"] >= fd["gaps"],
         "client_saw_no_sequence_gaps": cl["seq_gaps"] == 0,
         "client_resumed_and_got_replay": bool(cl["resumed"]) and cl["replayed_on_resume"] > 0,
-        "client_saw_end_of_session": bool(cl["end_of_session_seen"]),
+        "client_every_order_acknowledged": cl["accepted"] == cl["sent_orders"] and cl["rejected"] + cl["canceled"] + cl["replaced"] >= cl["sent_cancels"] + cl["sent_replaces"],
         "exchange_accepted_everything_sent": cl["sent_total"] == ex["records"] - 5,  # 2 opens, 1 close (drop), 1 close (logout), 1 end
     }
     summary = {

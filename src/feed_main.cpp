@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
         tcp_in.erase(tcp_in.begin(), tcp_in.begin() + static_cast<std::ptrdiff_t>(pos));
       }
     }
-    handler.on_timer(now);
+    handler.on_timer(now_ns());
     if (handler.end_of_session() && !handler.gap_outstanding()) break;
     if ((now - last_activity) / 1'000'000ull > timeout_ms) {
       if (!quiet) std::println(stderr, "feed: timed out waiting for data");

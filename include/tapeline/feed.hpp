@@ -360,9 +360,12 @@ class FeedHandler {
   void request_missing(Timestamp now, bool fresh) {
     if (pending_.empty()) return;
     const SeqNo want_end = pending_.begin()->first;
-    if (!fresh && now != 0 && last_request_ != 0 && now - last_request_ < retry_ns_) return;
+    // Callers may hand in slightly stale clocks; a request from the "future"
+    // counts as just sent rather than as overdue.
+    const Timestamp since_last = (last_request_ != 0 && now > last_request_) ? now - last_request_ : 0;
+    if (!fresh && now != 0 && last_request_ != 0 && since_last < retry_ns_) return;
     if (fresh && last_request_ != 0 && requested_start_ == next_seq_ && requested_end_ == want_end &&
-        (now == 0 || now - last_request_ < retry_ns_)) {
+        (now == 0 || since_last < retry_ns_)) {
       return; // same request already in flight
     }
     const SeqNo count = std::min<SeqNo>(want_end - next_seq_, 65535);

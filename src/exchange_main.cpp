@@ -343,6 +343,7 @@ int main(int argc, char** argv) {
   end.kind = InboundKind::EndOfSession;
   engine.apply(sequencer.append(end, now_ns()));
   publisher.system_event(now_ns(), wire::feed::SystemCode::EndOfSession);
+  const SeqNo end_seq = publisher.next_seq() - 1;
   publisher.flush();
   // Give a handler that lost the final packet a chance to ask for it.
   for (int i = 0; i < 30; ++i) {
@@ -382,12 +383,13 @@ int main(int argc, char** argv) {
       "  \"replaces\": {},\n  \"rejects\": {},\n  \"feed_messages\": {},\n  \"feed_packets_built\": {},\n"
       "  \"feed_packets_sent\": {},\n  \"feed_packets_dropped\": {},\n  \"feed_bytes\": {},\n"
       "  \"retrans_served\": {},\n  \"retrans_packets\": {},\n  \"snapshots_served\": {},\n  \"feed_next_seq\": {},\n"
+      "  \"feed_end_of_session_seq\": {},\n"
       "  \"inbound_processing_ns\": {},\n  \"books_hash\": \"{:016x}\",\n  \"state_hash\": \"{:016x}\",\n"
       "  \"books\": {}\n}}\n",
       elapsed_s, n_symbols, sessions_ever, frames_in, st.records, st.orders, st.fills, st.volume, st.cancels,
       st.replaces, st.rejects, fs.messages, fs.packets, feed_packets_sent - feed_packets_dropped,
       feed_packets_dropped, fs.bytes, retrans_served, fs.retrans_packets, snapshots_served, publisher.next_seq(),
-      inbound_ns.json(), engine.books_hash(), engine.state_hash(), json_books(engine));
+      end_seq, inbound_ns.json(), engine.books_hash(), engine.state_hash(), json_books(engine));
   if (!state_out.empty()) write_text(state_out, json);
   if (!quiet) std::print("{}", json);
   return 0;
