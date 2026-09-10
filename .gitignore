@@ -1,0 +1,5 @@
+build/
+*.dSYM/
+__pycache__/
+results/exchange.log
+results/feed.cap
