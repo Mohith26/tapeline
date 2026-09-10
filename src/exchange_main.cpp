@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   if (args.has("--help")) {
     std::println("exchange [--gw-port 9001] [--feed-addr 127.0.0.1] [--feed-port 9002] [--retrans-port 9003]");
     std::println("         [--symbols 8] [--drop-every N] [--log path] [--state-out path] [--idle-exit-ms 2000]");
-    std::println("         [--flush-us 0] [--quiet]");
+    std::println("         [--end-after-records N] [--quiet]");
     return 0;
   }
   const auto gw_port = static_cast<std::uint16_t>(args.get_int("--gw-port", 9001));
@@ -85,6 +85,7 @@ int main(int argc, char** argv) {
   const std::string log_path = args.get("--log", "");
   const std::string state_out = args.get("--state-out", "");
   const auto idle_exit_ms = args.get_int("--idle-exit-ms", 2000);
+  const auto end_after = static_cast<std::uint64_t>(args.get_int("--end-after-records", 0));
   const bool quiet = args.has("--quiet");
 
   net::ignore_sigpipe();
@@ -330,6 +331,7 @@ int main(int argc, char** argv) {
       gateway.heartbeat_all();
       last_heartbeat = now;
     }
+    if (end_after > 0 && sequencer.size() >= end_after) break; // scheduled close
     if (idle_exit_ms > 0 && sessions_ever > 0 && conns.empty()) {
       if (idle_since == 0) idle_since = now;
       if ((now - idle_since) / 1'000'000ull >= static_cast<std::uint64_t>(idle_exit_ms)) break;
@@ -372,6 +374,11 @@ int main(int argc, char** argv) {
     publisher.flush();
   }
   gateway.end_of_session_all();
+  for (Conn& c : conns) {
+    if (c.session == 0) continue;
+    (void)net::send_all(c.fd.get(), gateway.session(c.session).outbuf);
+    gateway.session(c.session).outbuf.clear();
+  }
   sequencer.close_file();
 
   const double elapsed_s = static_cast<double>(now_ns() - t_start) / 1e9;
@@ -383,13 +390,13 @@ int main(int argc, char** argv) {
       "  \"replaces\": {},\n  \"rejects\": {},\n  \"feed_messages\": {},\n  \"feed_packets_built\": {},\n"
       "  \"feed_packets_sent\": {},\n  \"feed_packets_dropped\": {},\n  \"feed_bytes\": {},\n"
       "  \"retrans_served\": {},\n  \"retrans_packets\": {},\n  \"snapshots_served\": {},\n  \"feed_next_seq\": {},\n"
-      "  \"feed_end_of_session_seq\": {},\n"
+      "  \"feed_end_of_session_seq\": {},\n  \"end_after_records\": {},\n  \"sessions_connected_at_close\": {},\n"
       "  \"inbound_processing_ns\": {},\n  \"books_hash\": \"{:016x}\",\n  \"state_hash\": \"{:016x}\",\n"
       "  \"books\": {}\n}}\n",
       elapsed_s, n_symbols, sessions_ever, frames_in, st.records, st.orders, st.fills, st.volume, st.cancels,
       st.replaces, st.rejects, fs.messages, fs.packets, feed_packets_sent - feed_packets_dropped,
       feed_packets_dropped, fs.bytes, retrans_served, fs.retrans_packets, snapshots_served, publisher.next_seq(),
-      end_seq, inbound_ns.json(), engine.books_hash(), engine.state_hash(), json_books(engine));
+      end_seq, end_after, conns.size(), inbound_ns.json(), engine.books_hash(), engine.state_hash(), json_books(engine));
   if (!state_out.empty()) write_text(state_out, json);
   if (!quiet) std::print("{}", json);
   return 0;

@@ -222,6 +222,7 @@ int main(int argc, char** argv) {
       std::println(stderr, "connection lost");
       break;
     }
+    if (c.end_of_session) break; // the venue closed while we were still trading
     if (resume_at > 0 && !resumed && sent_orders >= resume_at && c.inflight.empty()) {
       // Simulate a dropped connection: close without logging out, then log
       // back in with the last sequence we saw and let the gateway replay.
@@ -244,11 +245,13 @@ int main(int argc, char** argv) {
   }
   const double elapsed_s = static_cast<double>(now_ns() - t_start) / 1e9;
 
-  wire::gw::InMsg bye;
-  bye.type = wire::gw::InType::Logout;
-  c.send_frame(bye);
-  for (int i = 0; i < 20; ++i) {
-    if (!c.pump(5)) break;
+  if (!c.end_of_session) {
+    wire::gw::InMsg bye;
+    bye.type = wire::gw::InType::Logout;
+    c.send_frame(bye);
+    for (int i = 0; i < 20; ++i) {
+      if (!c.pump(5)) break;
+    }
   }
 
   const std::uint64_t total_sent = sent_orders + sent_cancels + sent_replaces;

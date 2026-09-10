@@ -41,8 +41,10 @@ def main():
         "every_gap_was_recovered": fd["gaps"] > 0 and fd["recovered_packets"] >= fd["gaps"],
         "client_saw_no_sequence_gaps": cl["seq_gaps"] == 0,
         "client_resumed_and_got_replay": bool(cl["resumed"]) and cl["replayed_on_resume"] > 0,
-        "client_every_order_acknowledged": cl["accepted"] == cl["sent_orders"] and cl["rejected"] + cl["canceled"] + cl["replaced"] >= cl["sent_cancels"] + cl["sent_replaces"],
-        "exchange_accepted_everything_sent": cl["sent_total"] == ex["records"] - 5,  # 2 opens, 1 close (drop), 1 close (logout), 1 end
+        "client_saw_end_of_session": bool(cl["end_of_session_seen"]),
+        "exchange_closed_on_schedule_with_client_connected": ex["records"] >= ex["end_after_records"] > 0 and ex["sessions_connected_at_close"] == 1,
+        "final_books_are_not_empty": sum(b["live_orders"] for b in ex["books"]) > 100,
+        "final_books_span_every_symbol": all(b["live_orders"] > 0 for b in ex["books"]),
     }
     summary = {
         "checks": checks,
@@ -50,7 +52,7 @@ def main():
         "exchange": {k: ex[k] for k in ("elapsed_s", "records", "orders", "fills", "volume", "cancels", "replaces",
                                        "rejects", "feed_messages", "feed_packets_built", "feed_packets_sent",
                                        "feed_packets_dropped", "feed_bytes", "retrans_served", "snapshots_served",
-                                       "inbound_processing_ns", "books_hash", "state_hash")},
+                                       "inbound_processing_ns", "books_hash", "state_hash", "books")},
         "feed": {k: fd[k] for k in ("udp_packets", "tcp_packets", "messages", "gaps", "retrans_requests",
                                    "recovered_packets", "duplicates", "snapshots", "decode_errors",
                                    "unknown_orders", "packet_handling_ns", "books_hash")},
